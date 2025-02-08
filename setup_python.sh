@@ -85,6 +85,16 @@ pyenv install 3.12.1 || {
 echo "Python 3.12.1をグローバルバージョンとして設定します..."
 pyenv global 3.12.1
 
+echo "現在のシェルに対してPython 3.12.1を有効にします..."
+pyenv shell 3.12.1 || {
+    echo -e "${RED}シェルへのPython 3.12.1の設定に失敗しました${NC}"
+    exit 1
+}
+
+# 現在のpyenvのステータスを表示
+echo -e "\n${GREEN}=== pyenv version ===${NC}"
+pyenv version
+
 # Pythonとpipのパスを確認
 PYTHON_PATH="$(pyenv which python)"
 PIP_PATH="$(pyenv which pip)"
