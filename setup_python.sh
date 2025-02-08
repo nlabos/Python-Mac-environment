@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# 明示的にBashを使用
+if [ -z "$BASH" ]; then
+    exec bash "$0" "$@"
+fi
+
 # カラー設定
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -26,44 +31,44 @@ if ! command -v pyenv &> /dev/null; then
     brew install pyenv
 fi
 
-# .zprofileの設定
-if [ -f "$HOME/.zprofile" ]; then
-    if ! grep -q 'eval "$(pyenv init --path)"' "$HOME/.zprofile"; then
-        echo -e '\n# pyenv設定' >> "$HOME/.zprofile"
-        echo 'export PYENV_ROOT="$HOME/.pyenv"' >> "$HOME/.zprofile"
-        echo '[[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"' >> "$HOME/.zprofile"
-        echo 'eval "$(pyenv init -)"' >> "$HOME/.zprofile"
-        echo -e "${GREEN}pyenvのパス設定を.zprofileに追加しました${NC}"
+# .bash_profileの設定
+if [ -f "$HOME/.bash_profile" ]; then
+    if ! grep -q 'eval "$(pyenv init -)"' "$HOME/.bash_profile"; then
+        echo -e '\n# pyenv設定' >> "$HOME/.bash_profile"
+        echo 'export PYENV_ROOT="$HOME/.pyenv"' >> "$HOME/.bash_profile"
+        echo 'export PATH="$PYENV_ROOT/bin:$PATH"' >> "$HOME/.bash_profile"
+        echo 'eval "$(pyenv init -)"' >> "$HOME/.bash_profile"
+        echo -e "${GREEN}pyenvのパス設定を.bash_profileに追加しました${NC}"
     fi
 else
-    echo -e '\n# pyenv設定' > "$HOME/.zprofile"
-    echo 'export PYENV_ROOT="$HOME/.pyenv"' >> "$HOME/.zprofile"
-    echo '[[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"' >> "$HOME/.zprofile"
-    echo 'eval "$(pyenv init -)"' >> "$HOME/.zprofile"
-    echo -e "${GREEN}.zprofileを作成し、pyenvの設定を追加しました${NC}"
+    echo -e '\n# pyenv設定' > "$HOME/.bash_profile"
+    echo 'export PYENV_ROOT="$HOME/.pyenv"' >> "$HOME/.bash_profile"
+    echo 'export PATH="$PYENV_ROOT/bin:$PATH"' >> "$HOME/.bash_profile"
+    echo 'eval "$(pyenv init -)"' >> "$HOME/.bash_profile"
+    echo -e "${GREEN}.bash_profileを作成し、pyenvの設定を追加しました${NC}"
 fi
 
-# .zshrcの設定
-if [ -f "$HOME/.zshrc" ]; then
-    if ! grep -q 'eval "$(pyenv init -)"' "$HOME/.zshrc"; then
-        echo -e '\n# pyenv設定' >> "$HOME/.zshrc"
-        echo 'export PYENV_ROOT="$HOME/.pyenv"' >> "$HOME/.zshrc"
-        echo '[[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"' >> "$HOME/.zshrc"
-        echo 'eval "$(pyenv init -)"' >> "$HOME/.zshrc"
-        echo -e "${GREEN}pyenvの初期化設定を.zshrcに追加しました${NC}"
+# .bashrcの設定
+if [ -f "$HOME/.bashrc" ]; then
+    if ! grep -q 'eval "$(pyenv init -)"' "$HOME/.bashrc"; then
+        echo -e '\n# pyenv設定' >> "$HOME/.bashrc"
+        echo 'export PYENV_ROOT="$HOME/.pyenv"' >> "$HOME/.bashrc"
+        echo 'export PATH="$PYENV_ROOT/bin:$PATH"' >> "$HOME/.bashrc"
+        echo 'eval "$(pyenv init -)"' >> "$HOME/.bashrc"
+        echo -e "${GREEN}pyenvの初期化設定を.bashrcに追加しました${NC}"
     fi
 else
-    echo -e '\n# pyenv設定' > "$HOME/.zshrc"
-    echo 'export PYENV_ROOT="$HOME/.pyenv"' >> "$HOME/.zshrc"
-    echo '[[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"' >> "$HOME/.zshrc"
-    echo 'eval "$(pyenv init -)"' >> "$HOME/.zshrc"
-    echo -e "${GREEN}.zshrcを作成し、pyenvの初期化設定を追加しました${NC}"
+    echo -e '\n# pyenv設定' > "$HOME/.bashrc"
+    echo 'export PYENV_ROOT="$HOME/.pyenv"' >> "$HOME/.bashrc"
+    echo 'export PATH="$PYENV_ROOT/bin:$PATH"' >> "$HOME/.bashrc"
+    echo 'eval "$(pyenv init -)"' >> "$HOME/.bashrc"
+    echo -e "${GREEN}.bashrcを作成し、pyenvの初期化設定を追加しました${NC}"
 fi
 
 # 設定ファイルを即時反映
 echo "設定ファイルを読み込みます..."
-source "$HOME/.zprofile"
-source "$HOME/.zshrc"
+source "$HOME/.bash_profile"
+source "$HOME/.bashrc"
 
 # 環境変数の設定を即時反映
 export PYENV_ROOT="$HOME/.pyenv"
@@ -107,16 +112,16 @@ echo "現在のPythonバージョン:"
 echo -e "${YELLOW}注意: 完全な環境の適用のために、新しいターミナルを開くことをお勧めします。${NC}"
 
 # 設定ファイルの内容を表示
-echo -e "\n${GREEN}=== .zprofileの内容 ===${NC}"
-if [ -f "$HOME/.zprofile" ]; then
-    cat "$HOME/.zprofile"
+echo -e "\n${GREEN}=== .bash_profileの内容 ===${NC}"
+if [ -f "$HOME/.bash_profile" ]; then
+    cat "$HOME/.bash_profile"
 else
-    echo ".zprofileが存在しません"
+    echo ".bash_profileが存在しません"
 fi
 
-echo -e "\n${GREEN}=== .zshrcの内容 ===${NC}"
-if [ -f "$HOME/.zshrc" ]; then
-    cat "$HOME/.zshrc"
+echo -e "\n${GREEN}=== .bashrcの内容 ===${NC}"
+if [ -f "$HOME/.bashrc" ]; then
+    cat "$HOME/.bashrc"
 else
-    echo ".zshrcが存在しません"
+    echo ".bashrcが存在しません"
 fi
