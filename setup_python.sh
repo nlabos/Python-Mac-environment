@@ -1,15 +1,27 @@
 #!/bin/bash
 
-# 明示的にBashを使用
-if [ -z "$BASH" ]; then
-    exec bash "$0" "$@"
-fi
-
 # カラー設定
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 RED='\033[0;31m'
 NC='\033[0m'
+
+# シェルの検出
+CURRENT_SHELL=$(basename "$SHELL")
+echo "検出されたシェル: $CURRENT_SHELL"
+
+# 設定ファイルの決定
+if [ "$CURRENT_SHELL" = "zsh" ]; then
+    PROFILE_FILE="$HOME/.zprofile"
+    RC_FILE="$HOME/.zshrc"
+else
+    PROFILE_FILE="$HOME/.bash_profile"
+    RC_FILE="$HOME/.bashrc"
+fi
+
+echo "使用する設定ファイル:"
+echo "- プロファイル: $PROFILE_FILE"
+echo "- RCファイル: $RC_FILE"
 
 echo "Python開発環境のセットアップを開始します..."
 
@@ -31,44 +43,60 @@ if ! command -v pyenv &> /dev/null; then
     brew install pyenv
 fi
 
-# .bash_profileの設定
-if [ -f "$HOME/.bash_profile" ]; then
-    if ! grep -q 'eval "$(pyenv init -)"' "$HOME/.bash_profile"; then
-        echo -e '\n# pyenv設定' >> "$HOME/.bash_profile"
-        echo 'export PYENV_ROOT="$HOME/.pyenv"' >> "$HOME/.bash_profile"
-        echo 'export PATH="$PYENV_ROOT/bin:$PATH"' >> "$HOME/.bash_profile"
-        echo 'eval "$(pyenv init -)"' >> "$HOME/.bash_profile"
-        echo -e "${GREEN}pyenvのパス設定を.bash_profileに追加しました${NC}"
+# プロファイルファイルの設定
+if [ -f "$PROFILE_FILE" ]; then
+    if ! grep -q 'eval "$(pyenv init -)"' "$PROFILE_FILE"; then
+        echo -e '\n# pyenv設定' >> "$PROFILE_FILE"
+        echo 'export PYENV_ROOT="$HOME/.pyenv"' >> "$PROFILE_FILE"
+        if [ "$CURRENT_SHELL" = "zsh" ]; then
+            echo '[[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"' >> "$PROFILE_FILE"
+        else
+            echo 'export PATH="$PYENV_ROOT/bin:$PATH"' >> "$PROFILE_FILE"
+        fi
+        echo 'eval "$(pyenv init -)"' >> "$PROFILE_FILE"
+        echo -e "${GREEN}pyenvのパス設定を$PROFILE_FILEに追加しました${NC}"
     fi
 else
-    echo -e '\n# pyenv設定' > "$HOME/.bash_profile"
-    echo 'export PYENV_ROOT="$HOME/.pyenv"' >> "$HOME/.bash_profile"
-    echo 'export PATH="$PYENV_ROOT/bin:$PATH"' >> "$HOME/.bash_profile"
-    echo 'eval "$(pyenv init -)"' >> "$HOME/.bash_profile"
-    echo -e "${GREEN}.bash_profileを作成し、pyenvの設定を追加しました${NC}"
+    echo -e '\n# pyenv設定' > "$PROFILE_FILE"
+    echo 'export PYENV_ROOT="$HOME/.pyenv"' >> "$PROFILE_FILE"
+    if [ "$CURRENT_SHELL" = "zsh" ]; then
+        echo '[[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"' >> "$PROFILE_FILE"
+    else
+        echo 'export PATH="$PYENV_ROOT/bin:$PATH"' >> "$PROFILE_FILE"
+    fi
+    echo 'eval "$(pyenv init -)"' >> "$PROFILE_FILE"
+    echo -e "${GREEN}$PROFILE_FILEを作成し、pyenvの設定を追加しました${NC}"
 fi
 
-# .bashrcの設定
-if [ -f "$HOME/.bashrc" ]; then
-    if ! grep -q 'eval "$(pyenv init -)"' "$HOME/.bashrc"; then
-        echo -e '\n# pyenv設定' >> "$HOME/.bashrc"
-        echo 'export PYENV_ROOT="$HOME/.pyenv"' >> "$HOME/.bashrc"
-        echo 'export PATH="$PYENV_ROOT/bin:$PATH"' >> "$HOME/.bashrc"
-        echo 'eval "$(pyenv init -)"' >> "$HOME/.bashrc"
-        echo -e "${GREEN}pyenvの初期化設定を.bashrcに追加しました${NC}"
+# RCファイルの設定
+if [ -f "$RC_FILE" ]; then
+    if ! grep -q 'eval "$(pyenv init -)"' "$RC_FILE"; then
+        echo -e '\n# pyenv設定' >> "$RC_FILE"
+        echo 'export PYENV_ROOT="$HOME/.pyenv"' >> "$RC_FILE"
+        if [ "$CURRENT_SHELL" = "zsh" ]; then
+            echo '[[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"' >> "$RC_FILE"
+        else
+            echo 'export PATH="$PYENV_ROOT/bin:$PATH"' >> "$RC_FILE"
+        fi
+        echo 'eval "$(pyenv init -)"' >> "$RC_FILE"
+        echo -e "${GREEN}pyenvの初期化設定を$RC_FILEに追加しました${NC}"
     fi
 else
-    echo -e '\n# pyenv設定' > "$HOME/.bashrc"
-    echo 'export PYENV_ROOT="$HOME/.pyenv"' >> "$HOME/.bashrc"
-    echo 'export PATH="$PYENV_ROOT/bin:$PATH"' >> "$HOME/.bashrc"
-    echo 'eval "$(pyenv init -)"' >> "$HOME/.bashrc"
-    echo -e "${GREEN}.bashrcを作成し、pyenvの初期化設定を追加しました${NC}"
+    echo -e '\n# pyenv設定' > "$RC_FILE"
+    echo 'export PYENV_ROOT="$HOME/.pyenv"' >> "$RC_FILE"
+    if [ "$CURRENT_SHELL" = "zsh" ]; then
+        echo '[[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"' >> "$RC_FILE"
+    else
+        echo 'export PATH="$PYENV_ROOT/bin:$PATH"' >> "$RC_FILE"
+    fi
+    echo 'eval "$(pyenv init -)"' >> "$RC_FILE"
+    echo -e "${GREEN}$RC_FILEを作成し、pyenvの初期化設定を追加しました${NC}"
 fi
 
 # 設定ファイルを即時反映
 echo "設定ファイルを読み込みます..."
-source "$HOME/.bash_profile"
-source "$HOME/.bashrc"
+source "$PROFILE_FILE"
+source "$RC_FILE"
 
 # 環境変数の設定を即時反映
 export PYENV_ROOT="$HOME/.pyenv"
@@ -119,19 +147,27 @@ echo -e "${GREEN}セットアップが完了しました！${NC}"
 echo "現在のPythonバージョン:"
 "$PYTHON_PATH" --version
 
+# 環境の確認
+echo -e "\n${GREEN}=== 環境の確認 ===${NC}"
+echo "Python version: $("$PYTHON_PATH" --version)"
+echo "pip version: $("$PIP_PATH" --version)"
+echo "pyenv version: $(pyenv --version)"
+echo "PYENV_ROOT: $PYENV_ROOT"
+echo "PATH: $PATH"
+
 echo -e "${YELLOW}注意: 完全な環境の適用のために、新しいターミナルを開くことをお勧めします。${NC}"
 
 # 設定ファイルの内容を表示
-echo -e "\n${GREEN}=== .bash_profileの内容 ===${NC}"
-if [ -f "$HOME/.bash_profile" ]; then
-    cat "$HOME/.bash_profile"
+echo -e "\n${GREEN}=== $PROFILE_FILEの内容 ===${NC}"
+if [ -f "$PROFILE_FILE" ]; then
+    cat "$PROFILE_FILE"
 else
-    echo ".bash_profileが存在しません"
+    echo "$PROFILE_FILEが存在しません"
 fi
 
-echo -e "\n${GREEN}=== .bashrcの内容 ===${NC}"
-if [ -f "$HOME/.bashrc" ]; then
-    cat "$HOME/.bashrc"
+echo -e "\n${GREEN}=== $RC_FILEの内容 ===${NC}"
+if [ -f "$RC_FILE" ]; then
+    cat "$RC_FILE"
 else
-    echo ".bashrcが存在しません"
+    echo "$RC_FILEが存在しません"
 fi
