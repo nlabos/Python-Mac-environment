@@ -105,3 +105,18 @@ echo "現在のPythonバージョン:"
 "$PYTHON_PATH" --version
 
 echo -e "${YELLOW}注意: 完全な環境の適用のために、新しいターミナルを開くことをお勧めします。${NC}"
+
+# 設定ファイルの内容を表示
+echo -e "\n${GREEN}=== .zprofileの内容 ===${NC}"
+if [ -f "$HOME/.zprofile" ]; then
+    cat "$HOME/.zprofile"
+else
+    echo ".zprofileが存在しません"
+fi
+
+echo -e "\n${GREEN}=== .zshrcの内容 ===${NC}"
+if [ -f "$HOME/.zshrc" ]; then
+    cat "$HOME/.zshrc"
+else
+    echo ".zshrcが存在しません"
+fi
