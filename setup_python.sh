@@ -31,145 +31,159 @@ if ! command -v brew &> /dev/null; then
     read -p "Homebrewをインストールしますか？ (y/n): " answer
     if [[ $answer =~ ^[Yy]$ ]]; then
         /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-        
-        # Homebrewのパスを設定
-        if [ "$CURRENT_SHELL" = "zsh" ]; then
-            echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> "$PROFILE_FILE"
-            eval "$(/opt/homebrew/bin/brew shellenv)"
-        else
-            echo 'eval "$(/usr/local/bin/brew shellenv)"' >> "$PROFILE_FILE"
-            eval "$(/usr/local/bin/brew shellenv)"
-        fi
     else
         echo "Homebrewのインストールをスキップします。セットアップを中断します。"
         exit 1
     fi
 fi
 
-# pyenvとpyenv-virtualenvのインストール
+# pyenvのインストール
 if ! command -v pyenv &> /dev/null; then
     echo "pyenvをインストールします..."
     brew install pyenv
     brew install pyenv-virtualenv
 fi
 
-# 必要なビルド依存関係をインストール
+# macOS用の依存関係
 echo "Pythonのビルドに必要な依存パッケージをインストールします..."
-if [[ "$OSTYPE" == "darwin"* ]]; then
-    brew install openssl readline sqlite3 xz zlib tcl-tk
-fi
+brew install openssl readline sqlite3 xz zlib tcl-tk
 
-# プロファイルファイルの設定
-setup_profile_file() {
+# 設定ファイルを上書きせずに新しい設定を追加する関数
+append_if_not_exists() {
     local file="$1"
-    if [ -f "$file" ]; then
-        # 既存の設定を削除（重複を避けるため）
-        sed -i.bak '/# pyenv設定/d' "$file" 2>/dev/null || true
-        sed -i.bak '/PYENV_ROOT/d' "$file" 2>/dev/null || true
-        sed -i.bak '/pyenv init/d' "$file" 2>/dev/null || true
-        sed -i.bak '/pyenv virtualenv-init/d' "$file" 2>/dev/null || true
+    local line="$2"
+    
+    # ファイルが存在しない場合は作成
+    if [ ! -f "$file" ]; then
+        echo "# 自動生成されたファイル - Python環境設定" > "$file"
+        echo -e "${GREEN}$fileを新規作成しました${NC}"
     fi
     
-    # 新しい設定を追加
-    echo -e '\n# pyenv設定' >> "$file"
-    echo 'export PYENV_ROOT="$HOME/.pyenv"' >> "$file"
-    echo 'export PATH="$PYENV_ROOT/bin:$PATH"' >> "$file"
-    echo 'eval "$(pyenv init --path)"' >> "$file"
-    echo 'eval "$(pyenv init -)"' >> "$file"
-    echo 'eval "$(pyenv virtualenv-init -)"' >> "$file"
-    echo -e "${GREEN}pyenvの設定を$fileに追加しました${NC}"
+    # 行が既に存在するか確認
+    if ! grep -qF "$line" "$file"; then
+        echo "$line" >> "$file"
+        echo -e "${GREEN}設定を追加しました: $line${NC}"
+    else
+        echo -e "${YELLOW}設定は既に存在します: $line${NC}"
+    fi
 }
 
-# 設定ファイルの更新
-setup_profile_file "$PROFILE_FILE"
-setup_profile_file "$RC_FILE"
+# プロファイルファイルの設定
+echo -e "\n${GREEN}=== プロファイルファイルの更新 ===${NC}"
 
-# 現在のシェルでpyenvを使えるようにする
+# .zprofileと.zshrcの設定を更新（zshの場合）
+if [ "$CURRENT_SHELL" = "zsh" ]; then
+    # 以前の設定があれば削除するのではなく、新しい設定を追加
+    echo "zshの設定ファイルを更新しています..."
+    
+    # .zprofileに設定を追加
+    append_if_not_exists "$PROFILE_FILE" ""
+    append_if_not_exists "$PROFILE_FILE" "# pyenv設定"
+    append_if_not_exists "$PROFILE_FILE" "export PYENV_ROOT=\"\$HOME/.pyenv\""
+    append_if_not_exists "$PROFILE_FILE" "[[ -d \$PYENV_ROOT/bin ]] && export PATH=\"\$PYENV_ROOT/bin:\$PATH\""
+    append_if_not_exists "$PROFILE_FILE" "eval \"\$(pyenv init --path)\""
+    
+    # .zshrcに設定を追加
+    append_if_not_exists "$RC_FILE" ""
+    append_if_not_exists "$RC_FILE" "# pyenv設定"
+    append_if_not_exists "$RC_FILE" "export PYENV_ROOT=\"\$HOME/.pyenv\""
+    append_if_not_exists "$RC_FILE" "[[ -d \$PYENV_ROOT/bin ]] && export PATH=\"\$PYENV_ROOT/bin:\$PATH\""
+    append_if_not_exists "$RC_FILE" "eval \"\$(pyenv init -)\""
+    append_if_not_exists "$RC_FILE" "eval \"\$(pyenv virtualenv-init -)\""
+else
+    # bashの場合の設定
+    echo "bashの設定ファイルを更新しています..."
+    
+    # .bash_profileに設定を追加
+    append_if_not_exists "$PROFILE_FILE" ""
+    append_if_not_exists "$PROFILE_FILE" "# pyenv設定"
+    append_if_not_exists "$PROFILE_FILE" "export PYENV_ROOT=\"\$HOME/.pyenv\""
+    append_if_not_exists "$PROFILE_FILE" "export PATH=\"\$PYENV_ROOT/bin:\$PATH\""
+    append_if_not_exists "$PROFILE_FILE" "eval \"\$(pyenv init --path)\""
+    
+    # .bashrcに設定を追加
+    append_if_not_exists "$RC_FILE" ""
+    append_if_not_exists "$RC_FILE" "# pyenv設定"
+    append_if_not_exists "$RC_FILE" "export PYENV_ROOT=\"\$HOME/.pyenv\""
+    append_if_not_exists "$RC_FILE" "export PATH=\"\$PYENV_ROOT/bin:\$PATH\""
+    append_if_not_exists "$RC_FILE" "eval \"\$(pyenv init -)\""
+    append_if_not_exists "$RC_FILE" "eval \"\$(pyenv virtualenv-init -)\""
+fi
+
+# 現在のシェルに必要な環境変数を設定（一時的に）
+echo -e "\n${GREEN}=== 現在のシェルに環境変数を設定 ===${NC}"
 export PYENV_ROOT="$HOME/.pyenv"
 export PATH="$PYENV_ROOT/bin:$PATH"
 eval "$(pyenv init --path)"
 eval "$(pyenv init -)"
 eval "$(pyenv virtualenv-init -)"
 
-# pyenvが正しく機能するか確認
-if ! command -v pyenv &> /dev/null; then
-    echo -e "${RED}警告: pyenvがPATHに正しく設定されていません。${NC}"
-    echo "手動でシェルを再起動してから続行してください。"
+# pyenvの動作確認
+echo -e "\n${GREEN}=== pyenvの動作確認 ===${NC}"
+if command -v pyenv &> /dev/null; then
+    echo "pyenvのバージョン: $(pyenv --version)"
+else
+    echo -e "${RED}pyenvが見つかりません。PATH環境変数を確認してください。${NC}"
+    echo "PYENV_ROOT: $PYENV_ROOT"
+    echo "PATH: $PATH"
+    echo -e "${YELLOW}新しいターミナルを開くか、以下のコマンドを実行してください:${NC}"
+    echo "exec \$SHELL -l"
     exit 1
 fi
 
-echo -e "${GREEN}pyenvが正しく設定されました。バージョン: $(pyenv --version)${NC}"
-
-# Python 3.12のインストールと設定
+# Python 3.12.1のインストール
+echo -e "\n${GREEN}=== Python 3.12.1のインストール ===${NC}"
 echo "Python 3.12.1をインストールします..."
-pyenv install 3.12.1 || {
-    echo -e "${RED}Python 3.12.1のインストールに失敗しました${NC}"
-    exit 1
-}
 
+if pyenv versions | grep -q 3.12.1; then
+    echo "Python 3.12.1は既にインストールされています"
+else
+    pyenv install 3.12.1 || {
+        echo -e "${RED}Python 3.12.1のインストールに失敗しました${NC}"
+        echo "よくあるエラーの原因:"
+        echo "1. Xcodeコマンドラインツールがインストールされていない"
+        echo "2. 必要な依存関係が不足している"
+        echo -e "${YELLOW}以下のコマンドを実行してみてください:${NC}"
+        echo "xcode-select --install"
+        echo "brew install openssl readline sqlite3 xz zlib tcl-tk"
+        exit 1
+    }
+fi
+
+# Python 3.12.1をグローバルに設定
 echo "Python 3.12.1をグローバルバージョンとして設定します..."
 pyenv global 3.12.1
+pyenv shell 3.12.1
 
-echo "現在のシェルに対してPython 3.12.1を有効にします..."
-pyenv shell 3.12.1 || {
-    echo -e "${RED}シェルへのPython 3.12.1の設定に失敗しました${NC}"
-    exit 1
-}
-
-# 現在のpyenvのステータスを表示
-echo -e "\n${GREEN}=== pyenv version ===${NC}"
-pyenv version
-
-# Pythonとpipのパスを確認
+# インストール確認
+echo -e "\n${GREEN}=== インストール確認 ===${NC}"
 PYTHON_PATH="$(pyenv which python)"
 PIP_PATH="$(pyenv which pip)"
 
 echo "Pythonのパス: $PYTHON_PATH"
 echo "pipのパス: $PIP_PATH"
+echo "Pythonバージョン: $($PYTHON_PATH --version)"
 
-# pipの更新
-echo "pipを最新バージョンに更新します..."
-"$PIP_PATH" install --upgrade pip
-
-# numpyのインストール
-echo "numpyをインストールします..."
-"$PIP_PATH" install numpy
+# numpy のインストール
+echo -e "\n${GREEN}=== numpyのインストール ===${NC}"
+$PIP_PATH install --upgrade pip
+$PIP_PATH install numpy
 
 # numpyのインストール確認
-"$PYTHON_PATH" -c "
-import numpy
-print('numpyのバージョン:', numpy.__version__)
-" || {
-    echo -e "${RED}警告: numpyのインストールに失敗した可能性があります${NC}"
-    exit 1
+echo "numpyの動作確認..."
+$PYTHON_PATH -c "import numpy; print('numpyのバージョン:', numpy.__version__)" || {
+    echo -e "${RED}numpyのインストールに失敗した可能性があります${NC}"
 }
 
-echo -e "${GREEN}セットアップが完了しました！${NC}"
-echo "現在のPythonバージョン:"
-"$PYTHON_PATH" --version
+# セットアップ完了
+echo -e "\n${GREEN}=== セットアップ完了 ===${NC}"
+echo "Pythonバージョン: $($PYTHON_PATH --version)"
+echo "pipバージョン: $($PIP_PATH --version | awk '{print $1, $2}')"
+echo "pyenvバージョン: $(pyenv --version)"
 
-# 環境の確認
-echo -e "\n${GREEN}=== 環境の確認 ===${NC}"
-echo "Python version: $("$PYTHON_PATH" --version)"
-echo "pip version: $("$PIP_PATH" --version)"
-echo "pyenv version: $(pyenv --version)"
-echo "PYENV_ROOT: $PYENV_ROOT"
-echo "PATH: $PATH"
-
-echo -e "${YELLOW}注意: 完全な環境の適用のために、以下のコマンドを実行するかターミナルを再起動してください:${NC}"
-echo -e "${YELLOW}exec \$SHELL -l${NC}"
-
-# 設定ファイルの内容を表示
-echo -e "\n${GREEN}=== $PROFILE_FILEの内容 ===${NC}"
-if [ -f "$PROFILE_FILE" ]; then
-    cat "$PROFILE_FILE"
-else
-    echo "$PROFILE_FILEが存在しません"
-fi
-
-echo -e "\n${GREEN}=== $RC_FILEの内容 ===${NC}"
-if [ -f "$RC_FILE" ]; then
-    cat "$RC_FILE"
-else
-    echo "$RC_FILEが存在しません"
-fi
+# 重要な最終メッセージ
+echo -e "\n${YELLOW}!!! 重要 - 設定を有効にするために !!!${NC}"
+echo -e "${YELLOW}新しいターミナルを開くか、以下のコマンドを実行してください:${NC}"
+echo -e "${GREEN}exec \$SHELL -l${NC}"
+echo -e "${YELLOW}その後、以下のコマンドでpyenvが正しく動作することを確認してください:${NC}"
+echo -e "${GREEN}pyenv version${NC}"
