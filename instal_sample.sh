@@ -61,6 +61,8 @@ if ! command -v brew &>/dev/null; then
     
     echo "Homebrewがインストールされ、PATHに追加されました。"
     echo "変更を適用するには、ターミナルを再起動するか、シェル設定ファイルをsourceしてください。"
+
+    source $SHELL_CONFIG
 else
     echo "Homebrewは既にインストールされています。"
 fi
@@ -96,6 +98,7 @@ fi
 pyenv global 3.12
 
 echo "Python 3.12 が有効になりました"
+
 
 
 
