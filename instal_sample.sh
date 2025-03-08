@@ -67,18 +67,40 @@ else
     echo "Homebrewは既にインストールされています。"
 fi
 
-# Install Pyenv using Homebrew
-if brew list pyenv &>/dev/null; then
-    echo "Pyenvは既にHomebrewによりインストールされています。"
-else
-    echo "Homebrew経由でPyenvをインストールしています..."
+# Install pyenv
+if ! command -v pyenv &>/dev/null; then
+    echo "pyenvをインストールしています..."
+    
+    # Install pyenv through Homebrew
     brew install pyenv
     
-    echo "Pyenvがインストールされました。"
+    # Set up pyenv initialization based on shell
+    if [ "$CURRENT_SHELL" = "fish" ]; then
+        # For fish shell
+        echo 'status --is-interactive; and pyenv init - | source' >> "$SHELL_CONFIG"
+        echo 'status --is-interactive; and pyenv virtualenv-init - | source' >> "$SHELL_CONFIG"
+    else
+        # For bash/zsh
+        echo 'export PYENV_ROOT="$HOME/.pyenv"' >> "$SHELL_CONFIG"
+        echo 'export PATH="$PYENV_ROOT/bin:$PATH"' >> "$SHELL_CONFIG"
+        echo 'eval "$(pyenv init --path)"' >> "$SHELL_CONFIG"
+        echo 'eval "$(pyenv init -)"' >> "$SHELL_CONFIG"
+        
+        # Set environment variables for immediate use
+        export PYENV_ROOT="$HOME/.pyenv"
+        export PATH="$PYENV_ROOT/bin:$PATH"
+        eval "$(pyenv init --path)" 2>/dev/null || true
+        eval "$(pyenv init -)" 2>/dev/null || true
+    fi
+    
+    echo "pyenvがインストールされ、設定されました。"
+    echo "変更を適用するには、ターミナルを再起動するか、シェル設定ファイルをsourceしてください。"
+else
+    echo "pyenvは既にインストールされています。"
 fi
 
 # Verify Pyenv installation
-pyenv_version=$(python3 --version)
+pyenv_version=$(pyenv --version)
 echo "インストールされたPyenvバージョン: $pyenv_version"
 
 if pyenv versions --bare | grep -E "^3\.12\."; then
@@ -95,10 +117,10 @@ else
     fi
 fi
 
+
 pyenv global 3.12
 
+source $SHELL_CONFIG
+
 echo "Python 3.12 が有効になりました"
-
-
-
 
