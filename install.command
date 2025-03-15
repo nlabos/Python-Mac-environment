@@ -1,2 +1,1 @@
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/nlabos/Python-Mac-environment/refs/heads/master/instal_sample.sh)"
-
+sh -c "$(curl -fsSL https://raw.githubusercontent.com/nlabos/Python-Mac-environment/refs/heads/master/install_unix.sh)"

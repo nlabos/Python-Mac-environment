@@ -1,5 +1,3 @@
-#!/bin/bash
-
 # Detect current shell
 detect_shell() {
     local shell_path
