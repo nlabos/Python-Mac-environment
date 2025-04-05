@@ -77,6 +77,8 @@ if ! command -v pyenv &>/dev/null; then
         # For fish shell
         echo 'status --is-interactive; and pyenv init - | source' >> "$SHELL_CONFIG"
         echo 'status --is-interactive; and pyenv virtualenv-init - | source' >> "$SHELL_CONFIG"
+
+        echo "ちいかわ"
     else
         # For bash/zsh
         echo 'export PYENV_ROOT="$HOME/.pyenv"' >> "$SHELL_CONFIG"
